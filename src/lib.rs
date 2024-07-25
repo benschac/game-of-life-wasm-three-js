@@ -9,16 +9,17 @@ extern "C" {
 }
 
 #[wasm_bindgen]
-pub fn greet(name: &str) {
-    alert(&format!("Hello, {}!", name));
-}
-
-#[wasm_bindgen]
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Cell {
     Dead = 0,
     Alive = 1,
+}
+
+pub enum ForstCell {
+    Dead,
+    Fire,
+    Tree,
 }
 
 #[wasm_bindgen]
@@ -49,6 +50,15 @@ impl Universe {
         }
         count
     }
+    pub fn conway_rules(cell: Cell, live_neighbors: u8) -> Cell {
+        match (cell, live_neighbors) {
+            (Cell::Alive, x) if x < 2 => Cell::Dead,
+            (Cell::Alive, 2) | (Cell::Alive, 3) => Cell::Alive,
+            (Cell::Alive, x) if x > 3 => Cell::Dead,
+            (Cell::Dead, 3) => Cell::Alive,
+            (otherwise, _) => otherwise,
+        }
+    }
 
     pub fn tick(&mut self) {
         let mut next = self.cells.clone();
@@ -57,13 +67,8 @@ impl Universe {
                 let idx = self.get_index(row, col);
                 let cell = self.cells[idx];
                 let live_neighbors = self.live_neighbor_count(row, col);
-                let next_cell = match (cell, live_neighbors) {
-                    (Cell::Alive, x) if x < 2 => Cell::Dead,
-                    (Cell::Alive, 2) | (Cell::Alive, 3) => Cell::Alive,
-                    (Cell::Alive, x) if x > 3 => Cell::Dead,
-                    (Cell::Dead, 3) => Cell::Alive,
-                    (otherwise, _) => otherwise,
-                };
+
+                let next_cell = Universe::conway_rules(cell, live_neighbors);
                 next[idx] = next_cell;
             }
         }
@@ -71,8 +76,8 @@ impl Universe {
     }
 
     pub fn new() -> Universe {
-        let width = 64;
-        let height = 64;
+        let width = 120;
+        let height = 120;
         let cells = (0..width * height)
             .map(|i| {
                 if i % 2 == 0 || i % 7 == 0 {
@@ -103,6 +108,20 @@ impl Universe {
 
     pub fn cells(&self) -> *const Cell {
         self.cells.as_ptr()
+    }
+
+    pub fn toggle_cell(&mut self, row: u32, column: u32) {
+        let idx = self.get_index(row, column);
+        self.cells[idx].toggle();
+    }
+}
+
+impl Cell {
+    fn toggle(&mut self) {
+        *self = match *self {
+            Cell::Dead => Cell::Alive,
+            Cell::Alive => Cell::Dead,
+        };
     }
 }
 
