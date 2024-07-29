@@ -65,6 +65,7 @@ const drawCells = () => {
       ctx.fillStyle = cells[idx] === Cell.Dead ? DEAD_COLOR : ALIVE_COLOR;
 
       // bottle neck
+      // TODO: create draw method for forest
       ctx.fillRect(
         col * (CELL_SIZE + 1) + 1,
         row * (CELL_SIZE + 1) + 1,
@@ -76,7 +77,7 @@ const drawCells = () => {
   ctx.stroke();
 };
 
-const universe = Universe.new();
+const universe = Universe.new("conway");
 const width = universe.width();
 const height = universe.height();
 
