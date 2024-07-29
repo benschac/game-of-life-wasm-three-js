@@ -1,4 +1,4 @@
-import { Universe, Cell } from "wasm-game-of-life";
+import { Universe, Cell, UniverseType } from "wasm-game-of-life";
 import { memory } from "wasm-game-of-life/pairing_with_ian_conway_bg.wasm";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -77,7 +77,7 @@ const drawCells = () => {
   ctx.stroke();
 };
 
-const universe = Universe.new("conway");
+const universe = Universe.new(0);
 const width = universe.width();
 const height = universe.height();
 
