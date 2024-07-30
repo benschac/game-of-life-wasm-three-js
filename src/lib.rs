@@ -44,6 +44,7 @@ enum Cells {
     Forest {
         cells: Vec<ForestCell>,
         grow_prob: f32,
+        burn_prob: f32,
     },
 }
 
@@ -169,6 +170,31 @@ fn get_index(row: u32, column: u32, width: u32) -> usize {
 
 #[wasm_bindgen]
 impl Universe {
+    fn near_fire(&self, row: u32, column: u32) -> bool {
+        for delta_row in [self.height - 1, 0, 1].iter().cloned() {
+            for delta_col in [self.width - 1, 0, 1].iter().cloned() {
+                if delta_row == 0 && delta_col == 0 {
+                    continue;
+                }
+                let neighbor_row = (row + delta_row) % self.height;
+                let neighbor_col = (column + delta_col) % self.width;
+                let idx = get_index(neighbor_row, neighbor_col, self.width);
+                let Cells::Forest {
+                    cells,
+                    grow_prob: _,
+                    burn_prob: _,
+                } = &self.cells
+                else {
+                    unreachable!()
+                };
+
+                if cells[idx] == ForestCell::Fire {
+                    return true;
+                }
+            }
+        }
+        false
+    }
     fn live_neighbor_count(&self, row: u32, column: u32) -> u8 {
         let mut count = 0;
         for delta_row in [self.height - 1, 0, 1].iter().cloned() {
@@ -187,9 +213,10 @@ impl Universe {
                     Cells::Forest {
                         cells,
                         grow_prob: _,
+                        burn_prob: _,
                     } => {
                         count += match cells[idx] {
-                            ForestCell::Fire => 1,
+                            ForestCell::Tree => 1,
                             _ => 0,
                         };
                     }
@@ -206,6 +233,7 @@ impl Universe {
             for col in 0..self.width {
                 let idx = get_index(row, col, self.width);
                 let live_neighbors = self.live_neighbor_count(row, col);
+                // let near_fire = self.near_fire(row, col);
 
                 match &self.cells {
                     Cells::Conway(cells) => {
@@ -222,24 +250,51 @@ impl Universe {
                             (otherwise, _) => otherwise,
                         };
                     }
-                    Cells::Forest { cells, grow_prob } => {
+                    Cells::Forest { cells, .. } => {
                         // TODO: Can follow the same pattern as above
                         let Cells::Forest {
                             cells: forest_next,
-                            grow_prob: _,
+                            grow_prob,
+                            burn_prob,
                         } = &mut next
                         else {
                             unreachable!()
                         };
+                        // 0 DEAD
+                        // 1 TREE
+                        // 2 FIRE
+
+                        // var makeTreeRule = function (growProb, burnProb) {
+                        //   return function (states) {
+                        //     var currentState = states[0];
+                        //     var neighbors = states.slice(1);
+
+                        //     ✅ if (currentState === DEAD && Math.random() < growProb) {
+                        //       return TREE;
+                        //     }
+                        //     ✅ if (currentState === TREE && neighbors.indexOf(FIRE) > -1) {
+                        //       return FIRE;
+                        //     }
+                        //     ✅ if (currentState === TREE && Math.random() < burnProb) {
+                        //       return FIRE;
+                        //     }
+
+                        //     if (currentState === FIRE) {
+                        //       return DEAD;
+                        //     }
+                        //     return currentState;
+                        //   };
+                        // };
 
                         let cell = cells[idx];
                         forest_next[idx] = match (cell, live_neighbors) {
-                            (ForestCell::Tree, x) if x > 0 => ForestCell::Fire,
                             (ForestCell::Tree, _) => {
-                                if random::<f32>() < *grow_prob {
-                                    ForestCell::Tree
+                                if self.near_fire(row, col) {
+                                    ForestCell::Fire
+                                } else if rand::random::<f32>() < *burn_prob {
+                                    ForestCell::Fire
                                 } else {
-                                    ForestCell::Dead
+                                    ForestCell::Tree
                                 }
                             }
                             (ForestCell::Fire, _) => ForestCell::Dead,
@@ -276,13 +331,16 @@ impl Universe {
                     .collect(),
             ),
             UniverseType::Forest => Cells::Forest {
-                grow_prob: 0.01,
+                grow_prob: 1.1,
+                burn_prob: 0.01,
                 cells: (0..width * height)
                     .map(|i| {
-                        if i % 2 == 0 {
-                            ForestCell::Tree
-                        } else if i % 7 == 0 {
+                        let r = random::<f32>();
+
+                        if r < 0.7 {
                             ForestCell::Dead
+                        } else if r < 0.7 + 0.3 {
+                            ForestCell::Tree
                         } else {
                             ForestCell::Fire
                         }
@@ -314,10 +372,7 @@ impl Universe {
         match &self.cells {
             Cells::Conway(cells) => cells.as_ptr(),
             // TODO: rethink how data is passed between js and rust. learn why this is scary
-            Cells::Forest {
-                cells,
-                grow_prob: _,
-            } => cells.as_ptr() as *const ConwayCell,
+            Cells::Forest { cells, .. } => cells.as_ptr() as *const ConwayCell,
         }
     }
 
@@ -327,10 +382,7 @@ impl Universe {
             Cells::Conway(cells) => {
                 cells[idx].toggle();
             }
-            Cells::Forest {
-                cells,
-                grow_prob: _,
-            } => {
+            Cells::Forest { cells, .. } => {
                 cells[idx].toggle();
             }
         }

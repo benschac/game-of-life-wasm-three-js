@@ -1,4 +1,9 @@
-import { Universe, Cell, UniverseType } from "wasm-game-of-life";
+import {
+  Universe,
+  ConwayCell,
+  ForestCell,
+  UniverseType,
+} from "wasm-game-of-life";
 import { memory } from "wasm-game-of-life/pairing_with_ian_conway_bg.wasm";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -55,6 +60,7 @@ function animate() {
 init();
 const drawCells = () => {
   const cellsPtr = universe.cells();
+  console.log(width * height);
   const cells = new Uint8Array(memory.buffer, cellsPtr, width * height);
 
   ctx.beginPath();
@@ -62,7 +68,21 @@ const drawCells = () => {
     for (let col = 0; col < width; col++) {
       const idx = getIndex(row, col);
 
-      ctx.fillStyle = cells[idx] === Cell.Dead ? DEAD_COLOR : ALIVE_COLOR;
+      ctx.fillStyle = cells[idx] === ConwayCell.Dead ? DEAD_COLOR : ALIVE_COLOR;
+
+      // switch (cells[idx]) {
+      //   case ForestCell.Tree:
+      //     ctx.fillStyle = "#228B22";
+      //     break;
+      //   case ForestCell.Fire:
+      //     ctx.fillStyle = "#FF4500";
+      //     break;
+      //   case ForestCell.Dead:
+      //     ctx.fillStyle = "#FFFFFF";
+      //     break;
+      //   default:
+      //     break;
+      // }
 
       // bottle neck
       // TODO: create draw method for forest

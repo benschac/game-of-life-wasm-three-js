@@ -1,6 +1,12 @@
 import { useEffect, useRef } from "react";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
+// import {
+//   memory,
+//   cellsPtr,
+//   width,
+//   height,
+// } from "./wasm-game-of-life/pkg/wasm_game_of_life_bg";
 import "./App.css";
 
 function App() {
@@ -16,6 +22,7 @@ function App() {
   };
 
   useEffect(() => {
+    // const cells = new Uint8Array(new ArrayBuffer(3), _, width * height);
     const animate = () => {
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d");
