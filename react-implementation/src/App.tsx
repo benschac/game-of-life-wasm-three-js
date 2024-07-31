@@ -1,4 +1,11 @@
 import { useEffect, useRef } from "react";
+import {
+  Universe,
+  ConwayCell,
+  ForestCell,
+  UniverseType,
+} from "wasm-game-of-life";
+import { memory } from "wasm-game-of-life/pairing_with_ian_conway_bg.wasm";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 // import {
@@ -8,6 +15,13 @@ import viteLogo from "/vite.svg";
 //   height,
 // } from "./wasm-game-of-life/pkg/wasm_game_of_life_bg";
 import "./App.css";
+const universe = Universe.new(UniverseType.Conway);
+const width = universe.width();
+const height = universe.height();
+const cellsPtr = universe.cells();
+console.log({ buffer: memory.buffer.byteLength, width, height, cellsPtr });
+console.log("Available space:", memory.buffer.byteLength);
+const cells = new Uint8Array(memory.buffer, cellsPtr, width * height);
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -22,29 +36,26 @@ function App() {
   };
 
   useEffect(() => {
-    // const cells = new Uint8Array(new ArrayBuffer(3), _, width * height);
-    const animate = () => {
-      const canvas = canvasRef.current;
-      const ctx = canvas?.getContext("2d");
-
-      let frameCount = 0;
-      const render = () => {
-        if (!ctx) {
-          return;
-        }
-        frameCount++;
-        draw(ctx, frameCount);
-        requestIdRef.current = requestAnimationFrame(render);
-      };
-      render();
-    };
-
-    animate();
-    return () => {
-      if (requestIdRef.current) {
-        cancelAnimationFrame(requestIdRef.current);
-      }
-    };
+    // const animate = () => {
+    //   const canvas = canvasRef.current;
+    //   const ctx = canvas?.getContext("2d");
+    //   let frameCount = 0;
+    //   const render = () => {
+    //     if (!ctx) {
+    //       return;
+    //     }
+    //     frameCount++;
+    //     draw(ctx, frameCount);
+    //     requestIdRef.current = requestAnimationFrame(render);
+    //   };
+    //   render();
+    // };
+    // animate();
+    // return () => {
+    //   if (requestIdRef.current) {
+    //     cancelAnimationFrame(requestIdRef.current);
+    //   }
+    // };
   }, []);
   return (
     <>
